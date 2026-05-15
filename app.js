@@ -14,7 +14,7 @@ clearButton.addEventListener("click", () => {
 
 runButton.addEventListener("click", async () => {
   const sourceCode = codeEl.value;
-  const stdin = stdinEl.value;
+  const stdin = "";
 
   if (!API_BASE || API_BASE.includes("YOUR-WORKER-URL")) {
     outputEl.textContent = "設定エラー：frontend/app.js の API_BASE を Cloudflare Worker のURLに変更してください。";
