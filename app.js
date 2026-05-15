@@ -16,6 +16,7 @@ const dropTargetPanelEl = document.getElementById("dropTargetPanel");
 const projectSidebarEl = document.querySelector(".projectSidebar");
 const activeFileNameEl = document.getElementById("activeFileName");
 const mainClassEl = document.getElementById("mainClass");
+const checkStatusEl = document.getElementById("checkStatus");
 
 let editor = null;
 let monacoRef = null;
@@ -40,6 +41,12 @@ let dragOverPackage = null;
 let pointerDragState = null;
 let dragGhostEl = null;
 let suppressNextFileClick = false;
+let suppressEditorChange = false;
+let autoCheckTimer = null;
+let autoCheckSeq = 0;
+let fileMarkers = new Map();
+const AUTO_CHECK_DELAY_MS = 1800;
+const MARKER_OWNER = "java-runner";
 
 
 function saveCurrentFile() {
@@ -112,7 +119,176 @@ function updatePackageDeclaration(content, packageName) {
     return updatedContent.trimStart();
   }
 
-  return `package ${packageName};\n\n${updatedContent.trimStart()}`;
+  return `package ${packageName};
+
+${updatedContent.trimStart()}`;
+}
+
+
+function setCheckStatus(message, kind = "idle") {
+  if (!checkStatusEl) return;
+  checkStatusEl.textContent = message;
+  checkStatusEl.dataset.kind = kind;
+}
+
+function getFileLine(filePath, lineNumber) {
+  const file = files.find((item) => item.path === filePath);
+  if (!file) return "";
+  return (file.content || "").split(/\r?\n/)[lineNumber - 1] || "";
+}
+
+function clearMarkersForFile(filePath) {
+  fileMarkers.delete(filePath);
+  applyMarkersToActiveModel();
+}
+
+function clearAllMarkers() {
+  fileMarkers = new Map();
+  applyMarkersToActiveModel();
+}
+
+function applyMarkersToActiveModel() {
+  if (!monacoRef || !editor || !editor.getModel() || !files[activeFileIndex]) return;
+  const activePath = files[activeFileIndex].path;
+  const markers = fileMarkers.get(activePath) || [];
+  monacoRef.editor.setModelMarkers(editor.getModel(), MARKER_OWNER, markers);
+}
+
+function parseCompilerOutputToMarkers(compileOutput) {
+  const markerMap = new Map();
+
+  if (!monacoRef || !compileOutput) {
+    return markerMap;
+  }
+
+  const lines = String(compileOutput).split(/\r?\n/);
+
+  for (let i = 0; i < lines.length; i++) {
+    const match = lines[i].match(/^(?:\.\/)?(src\/[^:\n]+\.java):(\d+):\s*(error|warning):\s*(.+)$/);
+
+    if (!match) continue;
+
+    const filePath = match[1];
+    const lineNumber = Number.parseInt(match[2], 10);
+    const kind = match[3];
+    const message = match[4] || "Javaの構文を確認してください。";
+
+    const sourceLine = getFileLine(filePath, lineNumber);
+    const caretLine = lines[i + 2] || "";
+    const caretIndex = caretLine.indexOf("^");
+    const startColumn = Math.max(1, caretIndex >= 0 ? caretIndex + 1 : 1);
+    const endColumn = Math.max(startColumn + 1, sourceLine.length + 1 || startColumn + 1);
+
+    const marker = {
+      severity: kind === "warning" ? monacoRef.MarkerSeverity.Warning : monacoRef.MarkerSeverity.Error,
+      message,
+      startLineNumber: lineNumber,
+      startColumn,
+      endLineNumber: lineNumber,
+      endColumn: Math.min(endColumn, Math.max(sourceLine.length + 1, startColumn + 1)),
+    };
+
+    if (!markerMap.has(filePath)) {
+      markerMap.set(filePath, []);
+    }
+
+    markerMap.get(filePath).push(marker);
+  }
+
+  return markerMap;
+}
+
+function updateMarkersFromCompileOutput(compileOutput) {
+  fileMarkers = parseCompilerOutputToMarkers(compileOutput);
+  applyMarkersToActiveModel();
+
+  let count = 0;
+  for (const markers of fileMarkers.values()) {
+    count += markers.length;
+  }
+
+  return count;
+}
+
+function getProjectSignature() {
+  const mainClass = normalizePackageName(mainClassEl.value || "Main");
+  const fileSignature = files
+    .map((file) => `${file.path}:${file.content}`)
+    .join("\n---JAVA-RUNNER-FILE---\n");
+
+  return `${mainClass}\n${fileSignature}`;
+}
+
+let lastCheckedSignature = "";
+
+function scheduleProjectCheck() {
+  if (!editor || !monacoRef) return;
+
+  window.clearTimeout(autoCheckTimer);
+  setCheckStatus("入力チェック待機中...", "idle");
+
+  autoCheckTimer = window.setTimeout(() => {
+    performProjectCheck();
+  }, AUTO_CHECK_DELAY_MS);
+}
+
+async function performProjectCheck() {
+  if (!API_BASE || API_BASE.includes("YOUR-WORKER-URL")) return;
+  if (!editor || !monacoRef) return;
+
+  saveCurrentFile();
+
+  const mainClass = normalizePackageName(mainClassEl.value || "Main");
+
+  if (!isValidPackageName(mainClass)) {
+    setCheckStatus("実行クラス名を確認してください", "error");
+    return;
+  }
+
+  const signature = getProjectSignature();
+
+  if (signature === lastCheckedSignature) {
+    return;
+  }
+
+  lastCheckedSignature = signature;
+  const currentSeq = ++autoCheckSeq;
+  setCheckStatus("入力チェック中...", "checking");
+
+  try {
+    const res = await fetch(`${API_BASE}/check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        files,
+        main_class: mainClass,
+        stdin: "",
+      }),
+    });
+
+    if (currentSeq !== autoCheckSeq) return;
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      setCheckStatus(data.error || "入力チェックに失敗しました", "error");
+      return;
+    }
+
+    const markerCount = updateMarkersFromCompileOutput(data.compile_output || "");
+
+    if (markerCount > 0) {
+      setCheckStatus(`エラー候補：${markerCount}件`, "error");
+    } else {
+      setCheckStatus("入力チェックOK", "ok");
+      clearAllMarkers();
+    }
+  } catch (error) {
+    if (currentSeq !== autoCheckSeq) return;
+    setCheckStatus("入力チェック未接続", "warning");
+  }
 }
 
 
@@ -445,6 +621,8 @@ function moveFileToPackage(filePath, targetPackage) {
 
   file.path = newPath;
   file.content = updatePackageDeclaration(file.content, packageName);
+  fileMarkers.delete(filePath);
+  fileMarkers.delete(newPath);
 
   if (packageName && !packages.includes(packageName)) {
     packages.push(packageName);
@@ -460,6 +638,7 @@ function moveFileToPackage(filePath, targetPackage) {
   selectedPackage = packageName;
   selectedTreeType = "file";
   showActiveFile();
+  scheduleProjectCheck();
   outputEl.textContent = `${fileName} を ${packageName ? `src/${packageToPath(packageName)}` : "src直下"} に移動しました。`;
 }
 
@@ -534,6 +713,7 @@ function deleteSelectedPackage() {
   selectedPackage = "";
   selectedTreeType = "file";
   showActiveFile();
+  scheduleProjectCheck();
   outputEl.textContent = `${packageName} パッケージを削除しました。`;
 }
 
@@ -759,7 +939,10 @@ function showActiveFile() {
   activeFileNameEl.textContent = files[activeFileIndex]?.path || "Javaファイルなし";
 
   if (editor && files[activeFileIndex]) {
+    suppressEditorChange = true;
     editor.setValue(files[activeFileIndex].content);
+    suppressEditorChange = false;
+    applyMarkersToActiveModel();
     editor.focus();
     setTimeout(() => editor.layout(), 0);
   }
@@ -988,6 +1171,14 @@ function initializeEditor() {
       editor.trigger("keyboard", "editor.action.triggerSuggest", {});
     });
 
+    editor.onDidChangeModelContent(() => {
+      if (suppressEditorChange) return;
+      if (files[activeFileIndex]) {
+        files[activeFileIndex].content = editor.getValue();
+      }
+      scheduleProjectCheck();
+    });
+
     window.addEventListener("resize", () => {
       if (!editor) return;
       editor.updateOptions(getResponsiveEditorOptions());
@@ -995,6 +1186,7 @@ function initializeEditor() {
     });
 
     showActiveFile();
+    scheduleProjectCheck();
   });
 }
 
@@ -1038,6 +1230,8 @@ if (projectSidebarEl) {
     moveFileToPackage(droppedFilePath, targetPackage);
   });
 }
+
+mainClassEl.addEventListener("input", scheduleProjectCheck);
 
 clearButton.addEventListener("click", () => {
   outputEl.textContent = "ここに実行結果が表示されます。";
@@ -1138,6 +1332,7 @@ addFileButton.addEventListener("click", () => {
   selectedPackage = packageName;
   selectedTreeType = "file";
   showActiveFile();
+  scheduleProjectCheck();
 });
 
 deleteFileButton.addEventListener("click", () => {
@@ -1164,11 +1359,13 @@ deleteFileButton.addEventListener("click", () => {
     return;
   }
 
+  fileMarkers.delete(currentFile.path);
   files.splice(activeFileIndex, 1);
   activeFileIndex = Math.max(0, activeFileIndex - 1);
   selectedPackage = getPackageFromPath(files[activeFileIndex]?.path || "");
   selectedTreeType = "file";
   showActiveFile();
+  scheduleProjectCheck();
 });
 
 runButton.addEventListener("click", async () => {
@@ -1207,6 +1404,14 @@ runButton.addEventListener("click", async () => {
     if (!res.ok) {
       outputEl.textContent = data.error || "実行に失敗しました。";
       return;
+    }
+
+    const markerCount = updateMarkersFromCompileOutput(data.compile_output || "");
+    if (markerCount > 0) {
+      setCheckStatus(`エラー候補：${markerCount}件`, "error");
+    } else if (!data.compile_output) {
+      clearAllMarkers();
+      setCheckStatus("入力チェックOK", "ok");
     }
 
     let message = "";
