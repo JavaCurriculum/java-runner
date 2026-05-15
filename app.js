@@ -3,7 +3,7 @@
 const API_BASE = "https://java-runner-proxy.ryuryu-dm0825.workers.dev";
 
 const codeEl = document.getElementById("code");
-const stdinEl = document.getElementById("stdin");
+const stdinEl = "";
 const outputEl = document.getElementById("output");
 const runButton = document.getElementById("runButton");
 const clearButton = document.getElementById("clearButton");
