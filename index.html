@@ -20,26 +20,28 @@
         複数クラス・パッケージ構成でも実行できます。
       </p>
 
-      <div class="hint">
-        <h2>確認ポイント</h2>
+      <details class="hint helpDetails">
+        <summary>確認ポイント</summary>
         <ul>
           <li>最初は <code>src/Main.java</code> だけです</li>
-          <li>クラスを追加したい場合は <strong>＋ クラス追加</strong> を押します</li>
-          <li>パッケージを作りたい場合は <strong>＋ パッケージ</strong> を押します</li>
-          <li>例：<code>com.example</code> を作ると <code>src/com/example</code> として表示されます</li>
-          <li>パッケージ内のクラスを使う場合は、<code>Main.java</code> 側で <code>import</code> してください</li>
+          <li><strong>＋ パッケージ</strong> で <code>com.example</code> などを作れます</li>
+          <li><strong>＋ クラス追加</strong> でJavaファイルを追加できます</li>
+          <li>ファイルはフォルダへドラッグ＆ドロップで移動できます</li>
+          <li><code>Main.java</code> も移動できます。移動時は実行クラスも自動で変わります</li>
+          <li>候補が出ない場合は <code>Ctrl + Space</code> を押してください</li>
         </ul>
-      </div>
+      </details>
 
-      <div class="hint">
-        <h2>使い方</h2>
+      <details class="hint helpDetails">
+        <summary>使い方</summary>
         <ol>
-          <li><code>src/Main.java</code> に実行開始の処理を書く</li>
+          <li>実行開始のクラスに <code>main</code> メソッドを書く</li>
           <li>必要に応じてパッケージやクラスを追加する</li>
-          <li>左のプロジェクト構成から編集したいファイルを選ぶ</li>
+          <li>左の構成ツリーから編集ファイルを選ぶ</li>
+          <li>不要なファイルやパッケージは選択して <strong>削除</strong> を押す</li>
           <li><strong>実行</strong> を押す</li>
         </ol>
-      </div>
+      </details>
     </section>
 
     <section class="panel editorPanel">
@@ -55,7 +57,7 @@
         <div class="editorActions">
           <button id="addPackageButton" class="secondary" type="button">＋ パッケージ</button>
           <button id="addFileButton" class="secondary" type="button">＋ クラス追加</button>
-          <button id="deleteFileButton" class="danger" type="button">削除</button>
+          <button id="deleteFileButton" class="danger" type="button">選択削除</button>
           <button id="runButton" type="button">▶ 実行</button>
         </div>
       </div>
@@ -68,7 +70,7 @@
 
         <div class="codeWorkspace">
           <div id="fileTabs" class="fileTabs" aria-label="Javaファイル一覧"></div>
-          <textarea id="code" spellcheck="false"></textarea>
+          <div id="codeEditor" class="codeEditor" aria-label="Javaコードエディタ"></div>
         </div>
       </div>
     </section>
@@ -86,6 +88,7 @@
     カリキュラム用の Java 実行ページです。
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/monaco-editor/min/vs/loader.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
