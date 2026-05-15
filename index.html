@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>precious Java Runner</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">precious Java Runner</div>
+    <div class="badge">Java</div>
+  </header>
+
+  <main class="layout">
+    <section class="panel lesson">
+      <h1>Java 実行練習</h1>
+      <p>
+        左のコードを書き換えて、<strong>実行</strong>ボタンを押してください。
+        実行結果は下に表示されます。
+      </p>
+      <div class="hint">
+        <h2>確認ポイント</h2>
+        <ul>
+          <li><code>public class Main</code> の名前を変えない</li>
+          <li><code>main</code> メソッドの中に処理を書く</li>
+          <li>文字列は <code>"</code> で囲む</li>
+          <li>文末に <code>;</code> を付ける</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="panel editorPanel">
+      <div class="editorHeader">
+        <span>Main.java</span>
+        <button id="runButton">▶ 実行</button>
+      </div>
+      <textarea id="code" spellcheck="false">public class Main {
+    public static void main(String[] args) {
+        System.out.println("Hello Java");
+    }
+}</textarea>
+      <label class="stdinLabel" for="stdin">標準入力（必要な場合だけ）</label>
+      <textarea id="stdin" spellcheck="false" placeholder="例：10"></textarea>
+    </section>
+
+    <section class="panel outputPanel">
+      <div class="outputHeader">
+        <span>実行結果</span>
+        <button id="clearButton" class="secondary">クリア</button>
+      </div>
+      <pre id="output">ここに実行結果が表示されます。</pre>
+    </section>
+  </main>
+
+  <footer>
+    Backlog Wiki からリンクして使う想定の、無料検証用 Java 実行ページです。
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
