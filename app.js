@@ -43,7 +43,7 @@ runButton.addEventListener("click", async () => {
       return;
     }
 
-    // let message = "";
+    let message = "";
     // message += `ステータス：${data.status || "不明"}\n`;
     // message += `実行時間：${data.time || "-"} 秒\n`;
     // message += `メモリ：${data.memory || "-"} KB\n`;
