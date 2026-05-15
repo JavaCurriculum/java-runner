@@ -569,23 +569,6 @@ footer {
   }
 }
 
-/* スマホ用：コードのインデントを見やすくする補助ボタン */
-.mobileEditorTools {
-  display: none;
-  padding: 8px;
-  gap: 8px;
-  background: #111827;
-  border-top: 1px solid #374151;
-  border-bottom: 1px solid #374151;
-}
-
-.mobileEditorTools button {
-  flex: 1;
-  min-height: 38px;
-  padding: 7px 8px;
-  font-size: 13px;
-}
-
 @media (max-width: 700px) {
   body {
     background: #e5e7eb;
@@ -716,9 +699,6 @@ footer {
     font-size: 12px;
   }
 
-  .mobileEditorTools {
-    display: flex;
-  }
 
   .codeEditor {
     height: 58vh;
@@ -770,9 +750,6 @@ footer {
     grid-template-columns: 1fr 1fr;
   }
 
-  .mobileEditorTools {
-    grid-template-columns: repeat(3, 1fr);
-  }
 }
 
 /* ドラッグ＆ドロップをしやすくする調整 */

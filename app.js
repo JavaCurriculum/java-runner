@@ -16,9 +16,6 @@ const dropTargetPanelEl = document.getElementById("dropTargetPanel");
 const projectSidebarEl = document.querySelector(".projectSidebar");
 const activeFileNameEl = document.getElementById("activeFileName");
 const mainClassEl = document.getElementById("mainClass");
-const suggestButton = document.getElementById("suggestButton");
-const indentButton = document.getElementById("indentButton");
-const outdentButton = document.getElementById("outdentButton");
 
 let editor = null;
 let monacoRef = null;
@@ -1045,30 +1042,6 @@ if (projectSidebarEl) {
 clearButton.addEventListener("click", () => {
   outputEl.textContent = "ここに実行結果が表示されます。";
 });
-
-if (suggestButton) {
-  suggestButton.addEventListener("click", () => {
-    if (!editor) return;
-    editor.focus();
-    editor.trigger("mobile", "editor.action.triggerSuggest", {});
-  });
-}
-
-if (indentButton) {
-  indentButton.addEventListener("click", () => {
-    if (!editor) return;
-    editor.focus();
-    editor.trigger("mobile", "editor.action.indentLines", {});
-  });
-}
-
-if (outdentButton) {
-  outdentButton.addEventListener("click", () => {
-    if (!editor) return;
-    editor.focus();
-    editor.trigger("mobile", "editor.action.outdentLines", {});
-  });
-}
 
 if (moveFileButton) {
   moveFileButton.addEventListener("click", moveActiveFileWithPrompt);
