@@ -43,14 +43,14 @@ runButton.addEventListener("click", async () => {
       return;
     }
 
-    let message = "";
-    message += `ステータス：${data.status || "不明"}\n`;
-    message += `実行時間：${data.time || "-"} 秒\n`;
-    message += `メモリ：${data.memory || "-"} KB\n`;
-    message += "\n";
+    // let message = "";
+    // message += `ステータス：${data.status || "不明"}\n`;
+    // message += `実行時間：${data.time || "-"} 秒\n`;
+    // message += `メモリ：${data.memory || "-"} KB\n`;
+    // message += "\n";
 
     if (data.stdout) {
-      message += "【標準出力】\n" + data.stdout + "\n";
+      message += data.stdout;
     }
 
     if (data.stderr) {
