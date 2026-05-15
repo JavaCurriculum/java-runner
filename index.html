@@ -17,35 +17,66 @@
       <h1>Java 実行練習</h1>
       <p>
         コードを書き換えて、<strong>実行</strong>ボタンを押してください。
-        実行結果は下に表示されます。
+        複数クラス・パッケージ構成でも実行できます。
       </p>
+
       <div class="hint">
         <h2>確認ポイント</h2>
         <ul>
-          <li><code>public class Main</code> の名前を変えない</li>
-          <li><code>main</code> メソッドの中に処理を書く</li>
-          <li>文字列は <code>"</code> で囲む</li>
-          <li>文末に <code>;</code> を付ける</li>
+          <li>最初は <code>src/Main.java</code> だけです</li>
+          <li>クラスを追加したい場合は <strong>＋ クラス追加</strong> を押します</li>
+          <li>パッケージを作りたい場合は <strong>＋ パッケージ</strong> を押します</li>
+          <li>例：<code>com.example</code> を作ると <code>src/com/example</code> として表示されます</li>
+          <li>パッケージ内のクラスを使う場合は、<code>Main.java</code> 側で <code>import</code> してください</li>
         </ul>
+      </div>
+
+      <div class="hint">
+        <h2>使い方</h2>
+        <ol>
+          <li><code>src/Main.java</code> に実行開始の処理を書く</li>
+          <li>必要に応じてパッケージやクラスを追加する</li>
+          <li>左のプロジェクト構成から編集したいファイルを選ぶ</li>
+          <li><strong>実行</strong> を押す</li>
+        </ol>
       </div>
     </section>
 
     <section class="panel editorPanel">
       <div class="editorHeader">
-        <span>Main.java</span>
-        <button id="runButton">▶ 実行</button>
+        <div>
+          <span id="activeFileName">src/Main.java</span>
+          <div class="runClassRow">
+            <label for="mainClass">実行クラス</label>
+            <input id="mainClass" type="text" value="Main" autocomplete="off" />
+          </div>
+        </div>
+
+        <div class="editorActions">
+          <button id="addPackageButton" class="secondary" type="button">＋ パッケージ</button>
+          <button id="addFileButton" class="secondary" type="button">＋ クラス追加</button>
+          <button id="deleteFileButton" class="danger" type="button">削除</button>
+          <button id="runButton" type="button">▶ 実行</button>
+        </div>
       </div>
-      <textarea id="code" spellcheck="false">public class Main {
-    public static void main(String[] args) {
-        System.out.println("Hello Java");
-    }
-}</textarea>
+
+      <div class="workspace">
+        <aside class="projectSidebar" aria-label="プロジェクト構成">
+          <div class="projectTitle">プロジェクト構成</div>
+          <div id="projectTree" class="projectTree"></div>
+        </aside>
+
+        <div class="codeWorkspace">
+          <div id="fileTabs" class="fileTabs" aria-label="Javaファイル一覧"></div>
+          <textarea id="code" spellcheck="false"></textarea>
+        </div>
+      </div>
     </section>
 
     <section class="panel outputPanel">
       <div class="outputHeader">
         <span>実行結果</span>
-        <button id="clearButton" class="secondary">クリア</button>
+        <button id="clearButton" class="secondary" type="button">クリア</button>
       </div>
       <pre id="output">ここに実行結果が表示されます。</pre>
     </section>
