@@ -568,3 +568,481 @@ footer {
     min-height: 320px;
   }
 }
+
+/* スマホ用：コードのインデントを見やすくする補助ボタン */
+.mobileEditorTools {
+  display: none;
+  padding: 8px;
+  gap: 8px;
+  background: #111827;
+  border-top: 1px solid #374151;
+  border-bottom: 1px solid #374151;
+}
+
+.mobileEditorTools button {
+  flex: 1;
+  min-height: 38px;
+  padding: 7px 8px;
+  font-size: 13px;
+}
+
+@media (max-width: 700px) {
+  body {
+    background: #e5e7eb;
+  }
+
+  .topbar {
+    min-height: 48px;
+    padding: 9px 12px;
+  }
+
+  .brand {
+    font-size: 17px;
+  }
+
+  .badge {
+    font-size: 12px;
+    padding: 4px 9px;
+  }
+
+  .layout {
+    width: 100%;
+    padding: 8px;
+    gap: 10px;
+  }
+
+  .panel {
+    border-radius: 10px;
+  }
+
+  .lesson {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .lesson h1 {
+    margin-bottom: 4px;
+    font-size: 17px;
+  }
+
+  .lesson p {
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .helpDetails {
+    margin-top: 8px;
+    border-left-width: 3px;
+  }
+
+  .helpDetails summary {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .helpDetails ul,
+  .helpDetails ol {
+    padding: 0 10px 10px 24px;
+  }
+
+  .helpDetails li {
+    margin: 3px 0;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .editorHeader {
+    padding: 8px;
+    gap: 8px;
+  }
+
+  #activeFileName {
+    font-size: 13px;
+  }
+
+  .runClassRow {
+    margin-top: 5px;
+    font-size: 12px;
+    gap: 5px;
+  }
+
+  .runClassRow input {
+    height: 34px;
+    font-size: 13px;
+  }
+
+  .editorActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .editorActions button {
+    width: 100%;
+    min-height: 38px;
+    padding: 7px 8px;
+    font-size: 12px;
+  }
+
+  .projectSidebar {
+    max-height: 136px;
+  }
+
+  .projectTitle {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .projectTree {
+    padding: 4px 0 8px;
+    font-size: 12px;
+  }
+
+  .treeItem {
+    min-height: 26px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+
+  .fileTabs {
+    min-height: 38px;
+    padding: 5px 6px 0;
+    gap: 5px;
+  }
+
+  .fileTab {
+    min-height: 32px;
+    padding: 6px 9px;
+    font-size: 12px;
+  }
+
+  .mobileEditorTools {
+    display: flex;
+  }
+
+  .codeEditor {
+    height: 58vh;
+    min-height: 360px;
+  }
+
+  /* Monaco内部の横スクロールが見えるように、親側で隠しすぎない */
+  .codeWorkspace,
+  .workspace,
+  .editorPanel {
+    overflow: hidden;
+  }
+
+  .outputHeader {
+    padding: 8px;
+  }
+
+  .outputHeader span {
+    font-size: 13px;
+  }
+
+  .outputHeader button {
+    min-height: 38px;
+    font-size: 12px;
+  }
+
+  pre {
+    min-height: 120px;
+    max-height: 240px;
+    overflow: auto;
+    padding: 12px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  footer {
+    padding: 10px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 420px) {
+  .codeEditor {
+    height: 60vh;
+    min-height: 340px;
+  }
+
+  .editorActions {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mobileEditorTools {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* ドラッグ＆ドロップをしやすくする調整 */
+.projectTree {
+  min-height: 180px;
+  padding: 8px 8px 14px;
+}
+
+.projectTree.dragMode {
+  outline: 2px dashed rgba(34, 197, 94, 0.7);
+  outline-offset: -6px;
+  background: rgba(34, 197, 94, 0.08);
+}
+
+.projectTree.dragMode.dropRoot {
+  background: rgba(20, 83, 45, 0.55);
+}
+
+.projectTree.dragMode.dropRoot::after {
+  content: "ここで離すと src 直下へ移動";
+  display: block;
+  margin: 8px 6px 2px;
+  padding: 10px 12px;
+  border: 2px dashed #22c55e;
+  border-radius: 10px;
+  color: #bbf7d0;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  font-size: 13px;
+  text-align: center;
+}
+
+.treeItem {
+  min-height: 38px;
+  margin: 3px 0;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  padding-right: 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+}
+
+.projectTree.dragMode .treeItem.folder,
+.projectTree.dragMode .treeItem.file {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.projectTree.dragMode .treeItem.folder::after {
+  content: "  ← ここに移動";
+  color: #86efac;
+  font-size: 12px;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+}
+
+.projectTree.dragMode .treeItem.file::after {
+  content: "  ← 同じ場所へ移動";
+  color: #93c5fd;
+  font-size: 12px;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+}
+
+.treeItem.dragOver {
+  min-height: 46px;
+  background: #14532d !important;
+  color: #fff;
+  border-color: #22c55e !important;
+  outline: 3px solid rgba(34, 197, 94, 0.8);
+  outline-offset: -3px;
+}
+
+.treeItem.dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+}
+
+@media (max-width: 700px) {
+  .projectTree {
+    min-height: 120px;
+    padding: 6px 6px 10px;
+  }
+
+  .treeItem {
+    min-height: 40px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-radius: 9px;
+  }
+
+  .projectTree.dragMode .treeItem.folder::after,
+  .projectTree.dragMode .treeItem.file::after {
+    display: block;
+    margin-top: 3px;
+    font-size: 11px;
+  }
+}
+
+
+/* ドラッグ＆ドロップ超かんたん版：大きい移動先パネル */
+.dropTargetPanel {
+  position: sticky;
+  top: 43px;
+  z-index: 2;
+  padding: 8px;
+  background: #0f172a;
+  border-bottom: 1px solid #374151;
+}
+
+.dropTargetTitle {
+  margin-bottom: 6px;
+  color: #bbf7d0;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+}
+
+.dropTarget {
+  width: 100%;
+  min-height: 48px;
+  margin: 5px 0;
+  padding: 8px 10px;
+  border: 2px dashed rgba(34, 197, 94, 0.4);
+  border-radius: 12px;
+  background: #1f2937;
+  color: #e5e7eb;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  font-family: Consolas, "Courier New", monospace;
+  cursor: pointer;
+}
+
+.dropTarget span {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.dropTarget small {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.dropTarget:hover,
+.dropTarget.dragOver {
+  background: #14532d;
+  color: #fff;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.22);
+}
+
+.dropTarget.dragOver small {
+  color: #dcfce7;
+}
+
+.dropTargetPanel.dragMode .dropTarget {
+  min-height: 64px;
+  border-width: 3px;
+}
+
+.projectSidebar {
+  position: relative;
+}
+
+.projectSidebar::after {
+  content: "";
+  display: block;
+  height: 24px;
+}
+
+@media (max-width: 700px) {
+  .dropTargetPanel {
+    top: 34px;
+    padding: 6px;
+  }
+
+  .dropTargetTitle {
+    font-size: 11px;
+  }
+
+  .dropTarget {
+    min-height: 50px;
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .dropTargetPanel.dragMode .dropTarget {
+    min-height: 58px;
+  }
+
+  .dropTarget span {
+    font-size: 12px;
+  }
+
+  .dropTarget small {
+    font-size: 10px;
+  }
+}
+
+/* ドラッグ開始の判定をゆるくする調整 */
+.treeItem.file.easyDrag {
+  min-height: 54px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+.treeItem.file.easyDrag .treeGrabHandle {
+  flex: 0 0 auto;
+  min-width: 70px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  color: #bbf7d0;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  cursor: grab;
+}
+
+.treeItem.file.easyDrag .treeFileName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.treeItem.file.easyDrag:hover .treeGrabHandle,
+.treeItem.file.easyDrag.dragArmed .treeGrabHandle {
+  background: rgba(34, 197, 94, 0.28);
+  border-color: #22c55e;
+  color: #dcfce7;
+}
+
+.treeItem.file.easyDrag.dragArmed {
+  outline: 2px solid rgba(34, 197, 94, 0.35);
+  outline-offset: -2px;
+}
+
+.dragGhost {
+  position: fixed;
+  z-index: 9999;
+  max-width: min(360px, calc(100vw - 28px));
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #14532d;
+  color: #fff;
+  border: 2px solid #22c55e;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .treeItem.file.easyDrag {
+    min-height: 58px;
+    gap: 8px;
+  }
+
+  .treeItem.file.easyDrag .treeGrabHandle {
+    min-width: 76px;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+}

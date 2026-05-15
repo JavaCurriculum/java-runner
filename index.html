@@ -27,6 +27,7 @@
           <li><strong>＋ パッケージ</strong> で <code>com.example</code> などを作れます</li>
           <li><strong>＋ クラス追加</strong> でJavaファイルを追加できます</li>
           <li>ファイルはフォルダへドラッグ＆ドロップで移動できます</li>
+          <li>ドラッグが難しい場合は、ファイルを選んで <strong>場所移動</strong> を押してください</li>
           <li><code>Main.java</code> も移動できます。移動時は実行クラスも自動で変わります</li>
           <li>候補が出ない場合は <code>Ctrl + Space</code> を押してください</li>
         </ul>
@@ -57,6 +58,7 @@
         <div class="editorActions">
           <button id="addPackageButton" class="secondary" type="button">＋ パッケージ</button>
           <button id="addFileButton" class="secondary" type="button">＋ クラス追加</button>
+          <button id="moveFileButton" class="secondary" type="button">場所移動</button>
           <button id="deleteFileButton" class="danger" type="button">選択削除</button>
           <button id="runButton" type="button">▶ 実行</button>
         </div>
@@ -65,11 +67,17 @@
       <div class="workspace">
         <aside class="projectSidebar" aria-label="プロジェクト構成">
           <div class="projectTitle">プロジェクト構成</div>
+          <div id="dropTargetPanel" class="dropTargetPanel" aria-label="移動先一覧"></div>
           <div id="projectTree" class="projectTree"></div>
         </aside>
 
         <div class="codeWorkspace">
           <div id="fileTabs" class="fileTabs" aria-label="Javaファイル一覧"></div>
+          <div class="mobileEditorTools" aria-label="スマホ用コード補助">
+            <button id="suggestButton" class="secondary" type="button">候補</button>
+            <button id="indentButton" class="secondary" type="button">字下げ</button>
+            <button id="outdentButton" class="secondary" type="button">字下げ戻す</button>
+          </div>
           <div id="codeEditor" class="codeEditor" aria-label="Javaコードエディタ"></div>
         </div>
       </div>

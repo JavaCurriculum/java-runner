@@ -9,10 +9,16 @@ const clearButton = document.getElementById("clearButton");
 const addFileButton = document.getElementById("addFileButton");
 const addPackageButton = document.getElementById("addPackageButton");
 const deleteFileButton = document.getElementById("deleteFileButton");
+const moveFileButton = document.getElementById("moveFileButton");
 const fileTabsEl = document.getElementById("fileTabs");
 const projectTreeEl = document.getElementById("projectTree");
+const dropTargetPanelEl = document.getElementById("dropTargetPanel");
+const projectSidebarEl = document.querySelector(".projectSidebar");
 const activeFileNameEl = document.getElementById("activeFileName");
 const mainClassEl = document.getElementById("mainClass");
+const suggestButton = document.getElementById("suggestButton");
+const indentButton = document.getElementById("indentButton");
+const outdentButton = document.getElementById("outdentButton");
 
 let editor = null;
 let monacoRef = null;
@@ -34,6 +40,10 @@ let selectedPackage = "";
 let selectedTreeType = "file";
 let draggingFilePath = "";
 let dragOverPackage = null;
+let pointerDragState = null;
+let dragGhostEl = null;
+let suppressNextFileClick = false;
+
 
 function saveCurrentFile() {
   if (!files[activeFileIndex]) return;
@@ -106,6 +116,311 @@ function updatePackageDeclaration(content, packageName) {
   }
 
   return `package ${packageName};\n\n${updatedContent.trimStart()}`;
+}
+
+
+function getKnownDropTargets() {
+  const targetMap = new Map();
+
+  targetMap.set("", {
+    packageName: "",
+    label: "src直下",
+    path: "src/",
+  });
+
+  for (const packageName of packages) {
+    targetMap.set(packageName, {
+      packageName,
+      label: packageName,
+      path: `src/${packageToPath(packageName)}`,
+    });
+  }
+
+  for (const file of files) {
+    const packageName = getPackageFromPath(file.path);
+    if (packageName && !targetMap.has(packageName)) {
+      targetMap.set(packageName, {
+        packageName,
+        label: packageName,
+        path: `src/${packageToPath(packageName)}`,
+      });
+    }
+  }
+
+  return [...targetMap.values()].sort((a, b) => {
+    if (!a.packageName) return -1;
+    if (!b.packageName) return 1;
+    return a.packageName.localeCompare(b.packageName, "ja");
+  });
+}
+
+
+function createDragGhost(filePath) {
+  removeDragGhost();
+
+  dragGhostEl = document.createElement("div");
+  dragGhostEl.className = "dragGhost";
+  dragGhostEl.textContent = `移動中：${filePath}`;
+  document.body.appendChild(dragGhostEl);
+}
+
+function updateDragGhost(event) {
+  if (!dragGhostEl) return;
+  dragGhostEl.style.left = `${event.clientX + 14}px`;
+  dragGhostEl.style.top = `${event.clientY + 14}px`;
+}
+
+function removeDragGhost() {
+  if (dragGhostEl) {
+    dragGhostEl.remove();
+    dragGhostEl = null;
+  }
+}
+
+function startCustomFileDrag(filePath, item, event) {
+  saveCurrentFile();
+  draggingFilePath = filePath;
+  item.classList.add("dragging");
+  projectTreeEl.classList.add("dragMode");
+  dropTargetPanelEl?.classList.add("dragMode");
+  renderDropTargetPanel();
+  createDragGhost(filePath);
+  updateDragGhost(event);
+  applyDragOverStyle(getDropPackageFromElement(document.elementFromPoint(event.clientX, event.clientY)));
+}
+
+function finishCustomFileDrag(event) {
+  if (!pointerDragState) return;
+
+  const wasDragging = pointerDragState.started;
+  const filePath = pointerDragState.filePath;
+  const item = pointerDragState.item;
+
+  try {
+    if (item && pointerDragState.pointerId !== undefined) {
+      item.releasePointerCapture?.(pointerDragState.pointerId);
+    }
+  } catch (error) {
+    // すでに解放済みの場合は何もしません。
+  }
+
+  pointerDragState = null;
+
+  if (!wasDragging) {
+    return;
+  }
+
+  event.preventDefault();
+  event.stopPropagation();
+  suppressNextFileClick = true;
+
+  const element = document.elementFromPoint(event.clientX, event.clientY);
+  const targetPackage = getDropPackageFromElement(element);
+
+  draggingFilePath = "";
+  clearDragOverStyle();
+  removeDragGhost();
+  item?.classList.remove("dragging", "dragArmed");
+
+  moveFileToPackage(filePath, targetPackage);
+
+  window.setTimeout(() => {
+    suppressNextFileClick = false;
+  }, 0);
+}
+
+function cancelCustomFileDrag() {
+  if (!pointerDragState) return;
+
+  const item = pointerDragState.item;
+  pointerDragState = null;
+  draggingFilePath = "";
+  clearDragOverStyle();
+  removeDragGhost();
+  item?.classList.remove("dragging", "dragArmed");
+}
+
+function setupEasyDragStart(item, filePath) {
+  item.addEventListener("pointerdown", (event) => {
+    // 左クリック・ペン・タッチだけ対象にします。
+    if (event.button !== undefined && event.button !== 0) return;
+
+    pointerDragState = {
+      filePath,
+      item,
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      started: false,
+    };
+
+    item.classList.add("dragArmed");
+    item.setPointerCapture?.(event.pointerId);
+  });
+
+  item.addEventListener("pointermove", (event) => {
+    if (!pointerDragState || pointerDragState.filePath !== filePath) return;
+
+    const dx = event.clientX - pointerDragState.startX;
+    const dy = event.clientY - pointerDragState.startY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // かなり小さい移動でもドラッグ開始にします。
+    if (!pointerDragState.started && distance >= 2) {
+      pointerDragState.started = true;
+      startCustomFileDrag(filePath, item, event);
+    }
+
+    if (!pointerDragState.started) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    updateDragGhost(event);
+    const element = document.elementFromPoint(event.clientX, event.clientY);
+    applyDragOverStyle(getDropPackageFromElement(element));
+  });
+
+  item.addEventListener("pointerup", finishCustomFileDrag);
+  item.addEventListener("pointercancel", cancelCustomFileDrag);
+  item.addEventListener("lostpointercapture", () => {
+    if (pointerDragState?.started) return;
+    item.classList.remove("dragArmed");
+    pointerDragState = null;
+  });
+}
+
+function renderDropTargetPanel() {
+  if (!dropTargetPanelEl) return;
+
+  dropTargetPanelEl.innerHTML = "";
+
+  const title = document.createElement("div");
+  title.className = "dropTargetTitle";
+  title.textContent = draggingFilePath
+    ? "移動先：大きい枠で離してください"
+    : "移動先：ファイル選択後にクリックでも移動できます";
+  dropTargetPanelEl.appendChild(title);
+
+  for (const target of getKnownDropTargets()) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "dropTarget" + (dragOverPackage === target.packageName ? " dragOver" : "");
+    button.dataset.packageName = target.packageName;
+    button.innerHTML = `<span>${target.label}</span><small>${target.path}</small>`;
+
+    button.addEventListener("click", () => {
+      const currentFile = files[activeFileIndex];
+      if (!currentFile) return;
+      moveFileToPackage(currentFile.path, target.packageName);
+    });
+
+    button.addEventListener("dragenter", (event) => {
+      if (!draggingFilePath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      applyDragOverStyle(target.packageName);
+    });
+
+    button.addEventListener("dragover", (event) => {
+      if (!draggingFilePath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "move";
+      applyDragOverStyle(target.packageName);
+    });
+
+    button.addEventListener("drop", (event) => {
+      if (!draggingFilePath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const droppedFilePath = event.dataTransfer.getData("text/plain") || draggingFilePath;
+      draggingFilePath = "";
+      clearDragOverStyle();
+      moveFileToPackage(droppedFilePath, target.packageName);
+    });
+
+    dropTargetPanelEl.appendChild(button);
+  }
+}
+
+function getDropPackageFromElement(target) {
+  const dropTarget = target?.closest?.(".dropTarget");
+
+  if (dropTarget && dropTargetPanelEl?.contains(dropTarget)) {
+    return dropTarget.dataset.packageName || "";
+  }
+
+  const treeItem = target?.closest?.(".treeItem");
+
+  if (!treeItem || !projectTreeEl.contains(treeItem)) {
+    return "";
+  }
+
+  if (treeItem.dataset.type === "folder") {
+    return treeItem.dataset.packageName || "";
+  }
+
+  if (treeItem.dataset.type === "file") {
+    return getPackageFromPath(treeItem.dataset.filePath || "");
+  }
+
+  return "";
+}
+
+function applyDragOverStyle(packageName) {
+  const normalizedPackage = normalizePackageName(packageName || "");
+  dragOverPackage = normalizedPackage;
+
+  projectTreeEl.classList.toggle("dragMode", Boolean(draggingFilePath));
+  projectTreeEl.classList.toggle("dropRoot", Boolean(draggingFilePath) && !normalizedPackage);
+
+  projectTreeEl.querySelectorAll(".treeItem.dragOver").forEach((element) => {
+    element.classList.remove("dragOver");
+  });
+
+  projectTreeEl.querySelectorAll(".treeItem.folder").forEach((element) => {
+    if ((element.dataset.packageName || "") === normalizedPackage) {
+      element.classList.add("dragOver");
+    }
+  });
+
+  dropTargetPanelEl?.classList.toggle("dragMode", Boolean(draggingFilePath));
+  dropTargetPanelEl?.querySelectorAll(".dropTarget").forEach((element) => {
+    element.classList.toggle("dragOver", (element.dataset.packageName || "") === normalizedPackage);
+  });
+}
+
+function clearDragOverStyle() {
+  dragOverPackage = null;
+  projectTreeEl.classList.remove("dragMode", "dropRoot");
+  dropTargetPanelEl?.classList.remove("dragMode");
+  projectTreeEl.querySelectorAll(".treeItem.dragOver").forEach((element) => {
+    element.classList.remove("dragOver");
+  });
+  dropTargetPanelEl?.querySelectorAll(".dropTarget.dragOver").forEach((element) => {
+    element.classList.remove("dragOver");
+  });
+}
+
+function moveActiveFileWithPrompt() {
+  saveCurrentFile();
+
+  const currentFile = files[activeFileIndex];
+
+  if (!currentFile) {
+    alert("移動するファイルがありません。");
+    return;
+  }
+
+  const currentPackage = getPackageFromPath(currentFile.path);
+  const packageInput = prompt(
+    "移動先のパッケージ名を入力してください。\n空欄なら src 直下へ移動します。\n例：com.example",
+    currentPackage
+  );
+
+  if (packageInput === null) return;
+
+  moveFileToPackage(currentFile.path, packageInput);
 }
 
 function moveFileToPackage(filePath, targetPackage) {
@@ -334,6 +649,8 @@ function renderTreeNode(node, depth = 0) {
       (packageName === selectedPackage ? " selected" : "") +
       (selectedTreeType === "package" && packageName === selectedPackage && packageName ? " packageDeleteTarget" : "") +
       (isDragOver ? " dragOver" : "");
+    item.dataset.type = "folder";
+    item.dataset.packageName = packageName;
     item.style.paddingLeft = `${depth * 14 + 8}px`;
     item.textContent = depth === 0 ? "▾ project" : `▾ ${node.name}`;
     item.title = depth === 0 ? "ここにドロップすると src 直下へ移動します" : `${packageName || "src直下"} へ移動`;
@@ -345,23 +662,18 @@ function renderTreeNode(node, depth = 0) {
     item.addEventListener("dragover", (event) => {
       if (!draggingFilePath) return;
       event.preventDefault();
+      event.stopPropagation();
       event.dataTransfer.dropEffect = "move";
-      dragOverPackage = packageName;
-      renderProjectTree();
-    });
-
-    item.addEventListener("dragleave", (event) => {
-      const relatedTarget = event.relatedTarget;
-      if (relatedTarget && item.contains(relatedTarget)) return;
-      dragOverPackage = null;
-      renderProjectTree();
+      applyDragOverStyle(packageName);
     });
 
     item.addEventListener("drop", (event) => {
+      if (!draggingFilePath) return;
       event.preventDefault();
+      event.stopPropagation();
       const droppedFilePath = event.dataTransfer.getData("text/plain") || draggingFilePath;
-      dragOverPackage = null;
       draggingFilePath = "";
+      clearDragOverStyle();
       moveFileToPackage(droppedFilePath, packageName);
     });
 
@@ -379,15 +691,20 @@ function renderTreeNode(node, depth = 0) {
     const isActive = files[activeFileIndex]?.path === node.path;
     const isMainFile = node.name === "Main.java";
 
-    item.className = "treeItem file draggable" + (isActive ? " active" : "") + (isMainFile ? " mainFile" : "");
+    item.className = "treeItem file draggable easyDrag" + (isActive ? " active" : "") + (isMainFile ? " mainFile" : "");
+    item.dataset.type = "file";
+    item.dataset.filePath = node.path;
     item.style.paddingLeft = `${depth * 14 + 8}px`;
-    item.textContent = `${isMainFile ? "🚀" : "☕"} ${node.name}`;
-    item.title = `${node.path}：ドラッグしてパッケージへ移動できます`;
+    item.innerHTML = `<span class="treeGrabHandle" aria-hidden="true">⠿ 移動</span><span class="treeFileName">${isMainFile ? "🚀" : "☕"} ${node.name}</span>`;
+    item.title = `${node.path}：行全体をつかんで動かせます。少し動かすだけでドラッグ開始します。`;
     item.draggable = true;
 
     item.addEventListener("click", () => {
+      if (suppressNextFileClick) return;
       setActiveFileByPath(node.path);
     });
+
+    setupEasyDragStart(item, node.path);
 
     item.addEventListener("dragstart", (event) => {
       saveCurrentFile();
@@ -395,13 +712,35 @@ function renderTreeNode(node, depth = 0) {
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData("text/plain", node.path);
       item.classList.add("dragging");
+      projectTreeEl.classList.add("dragMode");
+      dropTargetPanelEl?.classList.add("dragMode");
+      renderDropTargetPanel();
+    });
+
+    item.addEventListener("dragover", (event) => {
+      if (!draggingFilePath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = "move";
+      applyDragOverStyle(getPackageFromPath(node.path));
+    });
+
+    item.addEventListener("drop", (event) => {
+      if (!draggingFilePath) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const droppedFilePath = event.dataTransfer.getData("text/plain") || draggingFilePath;
+      const targetPackage = getPackageFromPath(node.path);
+      draggingFilePath = "";
+      clearDragOverStyle();
+      moveFileToPackage(droppedFilePath, targetPackage);
     });
 
     item.addEventListener("dragend", () => {
       draggingFilePath = "";
-      dragOverPackage = null;
-      item.classList.remove("dragging");
-      renderProjectTree();
+      clearDragOverStyle();
+      removeDragGhost();
+      item.classList.remove("dragging", "dragArmed");
     });
 
     projectTreeEl.appendChild(item);
@@ -409,6 +748,7 @@ function renderTreeNode(node, depth = 0) {
 }
 
 function renderProjectTree() {
+  renderDropTargetPanel();
   projectTreeEl.innerHTML = "";
   const tree = buildProjectTree();
   renderTreeNode(tree, 0);
@@ -582,6 +922,48 @@ function setupJavaAutocomplete(monaco) {
   });
 }
 
+function isMobileLayout() {
+  return window.matchMedia("(max-width: 700px)").matches;
+}
+
+function getResponsiveEditorOptions() {
+  const mobile = isMobileLayout();
+
+  return {
+    automaticLayout: true,
+    fontSize: mobile ? 14 : 16,
+    lineHeight: mobile ? 22 : 24,
+    tabSize: 4,
+    insertSpaces: true,
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    // スマホでは折り返さず、横スクロールでインデントを見やすくします。
+    wordWrap: mobile ? "off" : "on",
+    quickSuggestions: true,
+    suggestOnTriggerCharacters: true,
+    wordBasedSuggestions: "allDocuments",
+    snippetSuggestions: "top",
+    autoClosingBrackets: "always",
+    autoClosingQuotes: "always",
+    formatOnPaste: true,
+    formatOnType: true,
+    lineNumbers: "on",
+    lineNumbersMinChars: mobile ? 3 : 5,
+    glyphMargin: !mobile,
+    folding: !mobile,
+    overviewRulerLanes: mobile ? 0 : 2,
+    renderLineHighlight: mobile ? "none" : "line",
+    padding: { top: mobile ? 10 : 14, bottom: mobile ? 16 : 20 },
+    scrollbar: {
+      vertical: "visible",
+      horizontal: "visible",
+      horizontalScrollbarSize: mobile ? 12 : 10,
+      verticalScrollbarSize: mobile ? 12 : 10,
+      alwaysConsumeMouseWheel: false,
+    },
+  };
+}
+
 function initializeEditor() {
   if (!window.require) {
     outputEl.textContent = "Monaco Editorの読み込みに失敗しました。インターネット接続、またはCDNの読み込みを確認してください。";
@@ -602,34 +984,95 @@ function initializeEditor() {
       value: files[activeFileIndex].content,
       language: "java",
       theme: "vs-dark",
-      automaticLayout: true,
-      fontSize: 16,
-      tabSize: 4,
-      insertSpaces: true,
-      minimap: { enabled: false },
-      scrollBeyondLastLine: false,
-      wordWrap: "on",
-      quickSuggestions: true,
-      suggestOnTriggerCharacters: true,
-      wordBasedSuggestions: "allDocuments",
-      snippetSuggestions: "top",
-      autoClosingBrackets: "always",
-      autoClosingQuotes: "always",
-      formatOnPaste: true,
-      formatOnType: true,
+      ...getResponsiveEditorOptions(),
     });
 
     editor.addCommand(monacoRef.KeyMod.CtrlCmd | monacoRef.KeyCode.Space, () => {
       editor.trigger("keyboard", "editor.action.triggerSuggest", {});
     });
 
+    window.addEventListener("resize", () => {
+      if (!editor) return;
+      editor.updateOptions(getResponsiveEditorOptions());
+      editor.layout();
+    });
+
     showActiveFile();
+  });
+}
+
+projectTreeEl.addEventListener("dragover", (event) => {
+  if (!draggingFilePath) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  applyDragOverStyle(getDropPackageFromElement(event.target));
+});
+
+projectTreeEl.addEventListener("drop", (event) => {
+  if (!draggingFilePath) return;
+  event.preventDefault();
+  const droppedFilePath = event.dataTransfer.getData("text/plain") || draggingFilePath;
+  const targetPackage = getDropPackageFromElement(event.target);
+  draggingFilePath = "";
+  clearDragOverStyle();
+  moveFileToPackage(droppedFilePath, targetPackage);
+});
+
+projectTreeEl.addEventListener("mouseleave", () => {
+  if (!draggingFilePath) return;
+  applyDragOverStyle("");
+});
+
+if (projectSidebarEl) {
+  projectSidebarEl.addEventListener("dragover", (event) => {
+    if (!draggingFilePath) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    applyDragOverStyle(getDropPackageFromElement(event.target));
+  });
+
+  projectSidebarEl.addEventListener("drop", (event) => {
+    if (!draggingFilePath) return;
+    event.preventDefault();
+    const droppedFilePath = event.dataTransfer.getData("text/plain") || draggingFilePath;
+    const targetPackage = getDropPackageFromElement(event.target);
+    draggingFilePath = "";
+    clearDragOverStyle();
+    moveFileToPackage(droppedFilePath, targetPackage);
   });
 }
 
 clearButton.addEventListener("click", () => {
   outputEl.textContent = "ここに実行結果が表示されます。";
 });
+
+if (suggestButton) {
+  suggestButton.addEventListener("click", () => {
+    if (!editor) return;
+    editor.focus();
+    editor.trigger("mobile", "editor.action.triggerSuggest", {});
+  });
+}
+
+if (indentButton) {
+  indentButton.addEventListener("click", () => {
+    if (!editor) return;
+    editor.focus();
+    editor.trigger("mobile", "editor.action.indentLines", {});
+  });
+}
+
+if (outdentButton) {
+  outdentButton.addEventListener("click", () => {
+    if (!editor) return;
+    editor.focus();
+    editor.trigger("mobile", "editor.action.outdentLines", {});
+  });
+}
+
+if (moveFileButton) {
+  moveFileButton.addEventListener("click", moveActiveFileWithPrompt);
+}
 
 addPackageButton.addEventListener("click", () => {
   saveCurrentFile();
