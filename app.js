@@ -46,15 +46,15 @@ runButton.addEventListener("click", async () => {
     let message = "";
 
     if (data.stdout) {
-      message += data.stdout + "\n";
+      message += data.stdout;
     }
 
     if (data.stderr) {
-      message += "\n【実行時エラー】\n" + data.stderr + "\n";
+      message += data.stderr;
     }
 
     if (data.compile_output) {
-      message += "\n【コンパイルエラー】\n" + data.compile_output + "\n";
+      message += data.compile_output;
     }
 
     if (!data.stdout && !data.stderr && !data.compile_output) {
