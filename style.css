@@ -4,187 +4,298 @@
 
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Segoe UI", "Hiragino Sans", "Meiryo", sans-serif;
   background: #f4f7fb;
-  color: #1f2937;
+  color: #222;
 }
 
 .topbar {
   height: 64px;
-  background: linear-gradient(90deg, #1f9bd1, #39b6e6);
-  color: white;
+  padding: 0 24px;
+  background: #1f2937;
+  color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
 }
 
 .brand {
   font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-weight: 700;
 }
 
 .badge {
-  background: #6bbd3a;
-  color: white;
-  padding: 8px 16px;
+  background: #22c55e;
+  color: #fff;
+  padding: 6px 14px;
   border-radius: 999px;
   font-weight: 700;
 }
 
 .layout {
+  width: min(1200px, 100%);
+  margin: 0 auto;
+  padding: 24px;
   display: grid;
-  grid-template-columns: 320px 1fr;
-  grid-template-rows: auto 260px;
-  gap: 16px;
-  padding: 16px;
-  min-height: calc(100vh - 104px);
+  grid-template-columns: 1fr 1.4fr;
+  grid-template-areas:
+    "lesson editor"
+    "output output";
+  gap: 20px;
 }
 
 .panel {
-  background: white;
-  border-radius: 18px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
   box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-  overflow: hidden;
 }
 
 .lesson {
-  grid-row: 1 / span 2;
-  padding: 22px;
+  grid-area: lesson;
 }
 
-.lesson h1 {
-  margin: 0 0 14px;
-  font-size: 24px;
+.editorPanel {
+  grid-area: editor;
+  padding: 0;
+  overflow: hidden;
 }
 
-.lesson p {
+.outputPanel {
+  grid-area: output;
+  padding: 0;
+  overflow: hidden;
+}
+
+h1 {
+  margin-top: 0;
+  font-size: 28px;
+}
+
+h2 {
+  margin-bottom: 8px;
+  font-size: 18px;
+}
+
+p {
   line-height: 1.8;
 }
 
 .hint {
-  margin-top: 22px;
+  margin-top: 20px;
   padding: 16px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 14px;
-}
-
-.hint h2 {
-  margin: 0 0 8px;
-  font-size: 18px;
+  background: #f0fdf4;
+  border-left: 5px solid #22c55e;
+  border-radius: 12px;
 }
 
 .hint ul {
+  margin: 8px 0 0;
   padding-left: 20px;
-  line-height: 1.8;
 }
 
-.editorPanel,
-.outputPanel {
-  display: flex;
-  flex-direction: column;
+.hint li {
+  margin: 8px 0;
+  line-height: 1.6;
+}
+
+code {
+  background: #eef2ff;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-family: Consolas, "Courier New", monospace;
 }
 
 .editorHeader,
 .outputHeader {
+  height: 56px;
+  padding: 0 16px;
+  background: #111827;
+  color: #fff;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  background: #0f172a;
-  color: white;
+  justify-content: space-between;
+}
+
+.editorHeader span,
+.outputHeader span {
   font-weight: 700;
 }
 
 button {
+  min-height: 40px;
+  padding: 8px 18px;
   border: none;
-  background: #72bf44;
-  color: white;
-  font-weight: 800;
-  border-radius: 999px;
-  padding: 10px 20px;
+  border-radius: 10px;
+  background: #22c55e;
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
-  transition: transform 0.08s ease, opacity 0.2s ease;
+  font-size: 15px;
 }
 
 button:hover {
   opacity: 0.9;
 }
 
-button:active {
-  transform: translateY(1px);
-}
-
 button:disabled {
-  background: #94a3b8;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-button.secondary {
+.secondary {
   background: #64748b;
 }
 
 textarea {
   width: 100%;
+  min-height: 420px;
+  padding: 18px;
   border: none;
   outline: none;
-  resize: none;
-  font-family: "Consolas", "Menlo", monospace;
+  resize: vertical;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 16px;
+  line-height: 1.6;
+  background: #0f172a;
+  color: #e5e7eb;
+  tab-size: 4;
+}
+
+pre {
+  min-height: 180px;
+  margin: 0;
+  padding: 18px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+  background: #020617;
+  color: #e5e7eb;
   font-size: 15px;
   line-height: 1.6;
 }
 
-#code {
-  flex: 1;
-  min-height: 360px;
-  background: #111827;
-  color: #e5e7eb;
-  padding: 18px;
-}
-
-.stdinLabel {
-  display: block;
-  padding: 10px 16px 4px;
-  font-weight: 700;
-  color: #475569;
-  border-top: 1px solid #e5e7eb;
-}
-
-#stdin {
-  min-height: 72px;
-  padding: 12px 16px;
-  background: #f8fafc;
-  color: #0f172a;
-}
-
-#output {
-  flex: 1;
-  margin: 0;
-  padding: 18px;
-  background: #020617;
-  color: #e2e8f0;
-  overflow: auto;
-  white-space: pre-wrap;
-  font-family: "Consolas", "Menlo", monospace;
-  line-height: 1.6;
-}
-
 footer {
-  padding: 10px 16px 24px;
+  padding: 24px;
   text-align: center;
   color: #64748b;
 }
 
+/* タブレット向け */
 @media (max-width: 900px) {
   .layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto 260px;
+    grid-template-areas:
+      "lesson"
+      "editor"
+      "output";
+    padding: 18px;
   }
 
-  .lesson {
-    grid-row: auto;
+  h1 {
+    font-size: 24px;
+  }
+
+  textarea {
+    min-height: 360px;
+  }
+}
+
+/* スマホ向け */
+@media (max-width: 600px) {
+  .topbar {
+    height: auto;
+    min-height: 56px;
+    padding: 12px 16px;
+  }
+
+  .brand {
+    font-size: 18px;
+  }
+
+  .badge {
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+
+  .layout {
+    padding: 12px;
+    gap: 14px;
+  }
+
+  .panel {
+    border-radius: 12px;
+    padding: 16px;
+  }
+
+  .editorPanel,
+  .outputPanel {
+    padding: 0;
+  }
+
+  h1 {
+    font-size: 22px;
+  }
+
+  h2 {
+    font-size: 16px;
+  }
+
+  p,
+  li {
+    font-size: 14px;
+  }
+
+  .editorHeader,
+  .outputHeader {
+    height: auto;
+    min-height: 54px;
+    padding: 10px 12px;
+    gap: 10px;
+  }
+
+  button {
+    min-height: 44px;
+    padding: 9px 14px;
+    font-size: 14px;
+  }
+
+  textarea {
+    min-height: 330px;
+    padding: 14px;
+    font-size: 16px;
+    line-height: 1.55;
+  }
+
+  pre {
+    min-height: 150px;
+    padding: 14px;
+    font-size: 14px;
+  }
+
+  footer {
+    padding: 16px;
+    font-size: 13px;
+  }
+}
+
+/* かなり小さいスマホ向け */
+@media (max-width: 380px) {
+  .brand {
+    font-size: 16px;
+  }
+
+  .editorHeader,
+  .outputHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  button {
+    width: 100%;
+  }
+
+  textarea {
+    min-height: 300px;
   }
 }
